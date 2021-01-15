@@ -1,0 +1,6 @@
+*.swp
+*.*.swp
+*.sw*
+*.*.sw*
+node_modules/
+amazon_products.csv

@@ -1,0 +1,16 @@
+{
+  "name": "amazon-india-product-scraper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "scraper.js",
+  "dependencies": {
+    "fast-csv": "^4.3.6",
+    "puppeteer": "^5.5.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "bitsatebyte",
+  "license": "ISC"
+}
