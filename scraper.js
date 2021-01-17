@@ -5,8 +5,8 @@ const MAX_PAGE_COUNT = 5;
 let search_term;
 let main_products_array = [];
 const selectors = {
-  product: 'sg-col-4-of-12 s-result-item s-asin sg-col-4-of-16 sg-col sg-col-4-of-20',
-  sponsored: '#a-row a-spacing-micro',
+  product: '.sg-col-4-of-12.s-result-item.s-asin.sg-col-4-of-16.sg-col.sg-col-4-of-20',
+  sponsored: '.a-row.a-spacing-micro',
   merchant: '#merchant-info',
   rating: '#reviewsMedley',
   review: '#cm-cr-dp-review-header',
@@ -16,15 +16,15 @@ const selectors = {
 const prepareUri = (page_number, keyword) => {
 
   if(page_number === 1) {
-    return `https://www.amazon.in/s?k=${keyword}&qid=1610663194&ref=sr_pg_1`
+    return `https://www.amazon.in/s?k=${keyword}&qid=1610892863&ref=sr_pg_1`
   }
   else {
-  return `https://www.amazon.in/s?k=${keyword}&page=${page_number}&qid=1610663194&ref=sr_pg_${page_number}`
+  return `https://www.amazon.in/s?k=${keyword}&page=${page_number}&qid=1610892863&ref=sr_pg_${page_number}`
   }
 }
 
-const reviewCheck = () => {
-  const isThereAReview = document.querySelectorAll(selectors.rating)[0].innerText;
+const reviewCheck = (pg, sel) => {
+  const isThereAReview = pg.$$(sel.rating)[0].innerText;
   if(isThereAReview == 'No customer reviews') {
     return 0;
   }
@@ -35,9 +35,7 @@ const addsPlusesBetweenKeywords = (keyword) => keyword.replace(/\s/g, '+');
 
 const Product = (product_name, sponsored=0, price, rating, review_count, brand_name, asin, seller, url) => ({product_name, sponsored, price, rating, review_count, brand_name, asin, seller, url});
 
-const pullsData = () => document.getElementsByClassName(selectors.product);
-
-const pullsOtherData = (selector) => document.querySelectorAll(selector)
+const pullsData = async (pg, sel) => await pg.$$(sel);
 
 const keywords = ['hydroponic nutrient solution', 'nutrient solution', 'leafy nutrients', 'one part nutrients', 'two part nutrients', 'three part nutrients'];
 
@@ -49,19 +47,20 @@ const keywords = ['hydroponic nutrient solution', 'nutrient solution', 'leafy nu
   });
   const page = await browser.newPage();
   page.setViewport({ width: 1280, height: 926 });
+  page.on('console', msg => console.log('PAGE LOG: ', msg.text()));
 
   for(j = 0; j < keywords.length; j++) {
 
-    let keyword = keywords[j];
-    keyword = addsPlusesBetweenKeywords(keyword);
+    let keyword = addsPlusesBetweenKeywords(keywords[j]);
 
     for(i = 1; i <= MAX_PAGE_COUNT; i++) {
 
       let url = prepareUri(i, keyword);
 
       await page.goto(url);
-      await page.evaluate(() => console.log(document));
-      const products = page.evaluate(pullsData(page, selectors));
+      const _pageInstance = await page.$('body');
+      const products = await page.evaluate(pullsData(_pageInstance, selectors.product));
+      console.log(products);
 
       for(i = 0; i < products.length; i++) {
       
@@ -85,15 +84,14 @@ const keywords = ['hydroponic nutrient solution', 'nutrient solution', 'leafy nu
         
         await page.goto(product_data['url']);
 
-	const other_products = await page.evaluate(pullsOtherData);
+	const other_products = await page.evaluate(pullsData);
 
-	await page.evaluate(reviewCheck) ? product_data['rating'] = page.$$('#'+selectors.rating)[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText.slice(0, 3)
+	await page.evaluate(reviewCheck) ? product_data['rating'] = _pageInstance.$$(selectors.rating)[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText.slice(0, 3)
 	              : product_data['rating'] = 0;
-        product_data['rating'] = await page.$$('#'+selectors.rating)[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText.slice(0, 3) 
+        product_data['rating'] = await _pageInstance.$$('#'+selectors.rating)[0].childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0].innerText.slice(0, 3) 
 	product_data['brand_name'] = other_products[0].childNodes[7].childNodes[1].childNodes[5].childNodes[0].childNodes[3].innerText;
         product_data['asin'] = other_products[0].childNodes[7].childNodes[1].childNodes[7].childNodes[0].childNodes[3].innerText;
         product_data['seller'] = await page.$$('#'+selectors.merchant)[0].childNodes[1].innerText;
-	console.log(typeof(product_data));
         
         // push it to the main_products_array
      
