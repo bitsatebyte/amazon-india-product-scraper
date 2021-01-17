@@ -7,15 +7,31 @@ const {
   addsPlusesBetweenKeywords,
   csvWriter,
   keywords,
+  extract,
+  _getProducts,
 } = utils;
 
 const products = [];
 
 const MAX_PAGE_SIZE = 5;
 
-// product object constructor
+// start puppeteer
 
-const Product = (product_name, sponsored=0, price, rating, review_count, brand_name, asin, seller, url) => ({product_name, sponsored, price, rating, review_count, brand_name, asin, seller, url});
+(async () => {
+  const browser = await puppeteer.launch({
+    headless: false,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  });
+
+  const page = await browser.newPage();
+  page.setViewport({ width: 1280, height: 926 });
+  page.on('console', msg => console.log('PAGE LOG: ', msg.text()));
+
+  const p = await _getProducts(page);
+  products = [...products, ...p];
+  console.log(products);
 
 
+  await browser.close();
+})();
 
