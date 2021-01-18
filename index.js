@@ -2,11 +2,8 @@ const puppeteer = require('puppeteer');
 const utils = require('./utils');
 
 const {
-  makeUri,
-  addsPlusesBetweenKeywords,
   csvWriter,
   keywords,
-  extract,
   _getProducts,
 } = utils;
 
@@ -16,7 +13,7 @@ const products = [];
 
 (async () => {
   const browser = await puppeteer.launch({
-    headless: false,
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
@@ -28,7 +25,10 @@ const products = [];
   const p = await _getProducts(page, secondPage);
   products = [...p];
   console.log(products);
-  csvWriter(products);
+  products.forEach(p => {
+    fileName = p[0].keyword;
+    csvWriter(products, fileName);
+  });
 
   await browser.close();
 })();

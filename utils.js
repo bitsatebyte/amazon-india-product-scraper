@@ -16,10 +16,10 @@ module.exports = {
   },
 
   // Writes to CSV
-  csvWriter: function (arr) {
+  csvWriter: function (arr, name) {
     const fs = require('fs');
     const csv = require('fast-csv');
-    const ws = fs.createWriteStream('amazon_products.csv');
+    const ws = fs.createWriteStream(`${name}.csv`);
 
     csv.write(arr, { headers: true })
        .pipe(ws);
@@ -53,12 +53,21 @@ module.exports = {
     return true;
   },
 
+  // Checks if rating is only single number
+  isRatingSingle: function(r) {
+    if(r[2] == 'o') {
+      return r.slice(0,1);
+    }
+    return r.slice(0,3);
+  },
+
   _getProducts: async function (pg, sPg) {
     const selectors = require('./selectors');
     const addsPlusesBetweenKeywords = module.exports.addsPlusesBetweenKeywords;
     const makeUri = module.exports.makeUri;
     const reviewCheck = module.exports.reviewCheck;
     const getBrandName = module.exports.getBrandName;
+    const isRatingSingle = module.exports.isRatingSingle;
     const keywords = module.exports.keywords;
 
     const MAX_PAGE_COUNT = 5;
@@ -92,6 +101,8 @@ module.exports = {
 
     for(i = 0; i < keywords.length; i++) {
       const keyword = addsPlusesBetweenKeywords(keywords[i]);     
+      const _arr = [];
+      const _arr.push({ keyword: keywords[i]});
 
     /* SECOND LOOP */
 
@@ -108,15 +119,11 @@ module.exports = {
       /* THIRD LOOP */
 
         for(k = 0; k < items.length; k++) {
-      
+     
 	  // init product object
 
           let prod = Product();
-	
-	  // init pushable object, and array
-          const pushable = {};
-	  const _arr = [];
-          
+
           const isSponsored = await items[k].$(selectors.sponsored);
 
           // Try catch blocks because some products don't have certain fields
@@ -149,20 +156,32 @@ module.exports = {
 	  const details = await sPg.$$eval(selectors.misc, el => el.map(e => e.innerText));
 	  const manAsin = getBrandName(details); 
 
-          prod['rating'] = reviewCheck(isRated) ? await sPg.$eval(selectors.rating, e => e.innerText.slice(0, 3)) : 0;
-          prod['seller'] = await sPg.$eval(selectors.merchant, e => e.innerText); 
+          prod['rating'] = reviewCheck(isRated) ? 
+			   (await sPg.$eval(selectors.rating, e => {
+                             const ret = isRatingSingle(e.innerText);
+			     return ret;
+			   })) 
+			   : 0;
+
+	  // Another Try catch block
+
+          let checkSeller;
+          try {
+            checkSeller = await sPg.$eval(selectors.merchant, e => e.innerText)
+	  }
+          catch (e) {
+	    prod['seller'] = manAsin.man;
+	  }
+          prod['seller'] = checkSeller; 
           prod['asin'] = manAsin.asin;
 	  prod['brand_name'] = manAsin.man;
           _arr.push(prod);
-          pushable.keyword = keywords[i];
-	  pushable._arr = _arr;
-          products.push(pushable);
-          console.log(pushable);
+          console.log(prod);
         };
       };
-
+        products.push(_arr);
+	console.log(`pushed keyword: "${keywords[i]}" elements \n Length: ${_arr.length}`);
     };
-
 
     return products;
   },
