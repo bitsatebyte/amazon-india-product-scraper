@@ -6,8 +6,7 @@ module.exports = {
   url: '.a-link-normal.a-text-normal',
   price: 'span.a-price-whole',
   reviewSel: 'span.a-size-base',
-  rating: '#reviewsMedley',
-  ratingSel: 'span.a-size-medium.a-color-base',
+  rating: 'span.a-size-medium.a-color-base',
   review: '#cm-cr-dp-review-header',
   misc: '#detailBullets_feature_div li .a-list-item',
 }

@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 
 const sel = '#detailBullets_feature_div li .a-list-item';
-const newSel = '.a-text-bold';
+const newSel = 'span.a-size-medium.a-color-base';
 const uri = 'https://www.amazon.in/GreenLoop-Pure-Hydroponic-Nutrients-LEAFY-200/dp/B078BHP7YC/ref=sr_1_5?dchild=1&keywords=hydroponic+nutrients&qid=1610973021&sr=8-5';
 const _uri = 'https://www.amazon.in/Watering-Suitable-Terrace-Gardening-Kitchen/dp/B08PVTYLCL/ref=sr_1_47?dchild=1&keywords=hydroponic+nutrients&qid=1610964243&sr=8-47';
 
@@ -37,8 +37,7 @@ const _uri = 'https://www.amazon.in/Watering-Suitable-Terrace-Gardening-Kitchen/
 	const page = await browser.newPage({ 'waitUntil': 'networkidle2'});
 	await page.goto(uri);
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-	const ele = await page.$$eval(sel, el => el.map(e => e.innerText));
-	getBrandName(ele);
+	const ele = await page.$$eval(newSel, el => el.map(e => e.innerText));
 	console.log(ele);
 
 	await browser.close();
