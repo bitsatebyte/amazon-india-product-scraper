@@ -154,7 +154,7 @@ module.exports = {
           prod['asin'] = manAsin.asin;
 	  prod['brand_name'] = manAsin.man;
           _arr.push(prod);
-          pushable.keyword = keyword[i];
+          pushable.keyword = keywords[i];
 	  pushable._arr = _arr;
           products.push(pushable);
           console.log(pushable);
