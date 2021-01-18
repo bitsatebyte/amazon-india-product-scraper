@@ -3,6 +3,7 @@ module.exports = {
   sponsored: '.a-row.a-spacing-micro',
   merchant: '#merchant-info',
   rating: '#reviewsMedley',
+  ratingSel: 'span.a-size-medium.a-color-base',
   review: '#cm-cr-dp-review-header',
   misc: '#detailBulletsWrapper_feature_div',
 }

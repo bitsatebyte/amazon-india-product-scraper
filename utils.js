@@ -29,15 +29,24 @@ module.exports = {
     'leafy nutrients',
   ],
 
+  reviewCheck: function(pg, sel) {
+    const isThereAReview = pg.$$(sel.rating)[0].innerText;
+    if(isThereAReview == 'No customer reviews') {
+      return 0;
+    }
+
+    return 1;
+  },
+
   _getProducts: async function (pg) {
     const selectors = require('./selectors');
     const addsPlusesBetweenKeywords = module.exports.addsPlusesBetweenKeywords;
     const makeUri = module.exports.makeUri;
+    const reviewCheck = module.exports.reviewCheck;
     const keywords = module.exports.keywords;
 
     const MAX_PAGE_COUNT = 5;
     const products = [];
-    console.log(selectors);
 
     // Product Constructor - closure
 
@@ -69,11 +78,11 @@ module.exports = {
 
     for(i = 0; i < keywords.length; i++) {
       const keyword = addsPlusesBetweenKeywords(keywords[i]);     
-      console.log(`Page Number ${i}`);
 
     /* SECOND LOOP */
 
       for(j = 1; j <= MAX_PAGE_COUNT; j++) {
+        console.log(`Page Number ${j}`);
         let uri = makeUri(j, keyword);  
         console.log(`Current URL: ${uri}`);
 
@@ -87,19 +96,36 @@ module.exports = {
 
         for(k = 0; k < items.length; k++) {
 
-          // init product object
-          let prod = Product();
-
+          let checkReview, checkPrice, prod = Product();
+          
           const isSponsored = await items[k].$(selectors.sponsored);
-          const checkReview = await items[k].$eval('span.a-size-base', e => e.innerText);
-          console.log(isSponsored);
-          isSponsored == null ? prod['sponsored'] = 1 : prod['sponsored'] = 0;
+
+          // Try catch blocks because some products don't have certain fields
+
+          try {
+            checkReview = await items[k].$eval('span.a-size-base', e => e.innerText);
+          }
+          catch (e) {
+            e ? prod['review_count'] = 0 : prod['review_count'] = checkReview;
+          }
+          try {
+            checkPrice = await items[k].$eval('span.a-price-whole', e => e.innerText);
+          }
+          catch (e) {
+            e ? prod['price'] = 0 : prod['price'] = checkPrice;
+          }
+          isSponsored == null ? prod['sponsored'] = 0 : prod['sponsored'] = 1;
           prod['product_name'] = await items[k].$eval('.a-size-base-plus.a-color-base.a-text-normal', e => e.innerText);
-          prod['price'] = await items[k].$eval('span.a-price-whole', e => e.innerText); 
-          prod['review_count'] = checkReview ? checkReview : 0; 
+          console.log(prod.product_name);
           prod['url'] = await items [k].$eval('.a-link-normal.a-text-normal', e => e.href); 
-          console.log(prod);
           products.push(prod);
+
+          await pg.goto(prod['url'], { 'waitUntil': 'networkidle2' });
+           
+          reviewCheck(pg, selectors.review) ? prod['rating'] = 
+          prod['rating'] = await items[k].$ 
+          prod['brand'] = 
+          prod['asin'] = 
           
         };
       };

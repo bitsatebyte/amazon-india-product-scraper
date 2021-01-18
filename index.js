@@ -28,7 +28,7 @@ const MAX_PAGE_SIZE = 5;
   page.on('console', msg => console.log('PAGE LOG: ', msg.text()));
 
   const p = await _getProducts(page);
-  products = [...products, ...p];
+  products = [...p];
   console.log(products);
 
 
