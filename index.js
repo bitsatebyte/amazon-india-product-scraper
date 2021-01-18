@@ -13,8 +13,6 @@ const {
 
 const products = [];
 
-const MAX_PAGE_SIZE = 5;
-
 // start puppeteer
 
 (async () => {

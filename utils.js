@@ -29,13 +29,24 @@ module.exports = {
     'leafy nutrients',
   ],
 
-  reviewCheck: function(pg, sel) {
-    const isThereAReview = pg.$$(sel.rating)[0].innerText;
-    if(isThereAReview == 'No customer reviews') {
-      return 0;
-    }
+  getBrandName: function(arr) {
+    ret = {};
+    arr.forEach(el => {
+      console.log(el);
+      isAsin = el.slice(0, 6) == 'ASIN :' ? true : false; 
+      isMan = el.slice(0, 14) == 'Manufacturer :' ? true : false;
+      if(isAsin) ret.asin = el.slice(7);
+      if(isMan) ret.man = el.slice(15);
+      console.log(`isAsin: ${isAsin} \n isMan: ${isMan}`);
+    });
+    return ret;
+  },
 
-    return 1;
+  reviewCheck: function(el) {
+    if(el == 'No customer reviews') {
+      return false;
+    }
+    return true;
   },
 
   _getProducts: async function (pg) {
@@ -43,6 +54,7 @@ module.exports = {
     const addsPlusesBetweenKeywords = module.exports.addsPlusesBetweenKeywords;
     const makeUri = module.exports.makeUri;
     const reviewCheck = module.exports.reviewCheck;
+    const getBrandName = module.exports.getBrandName;
     const keywords = module.exports.keywords;
 
     const MAX_PAGE_COUNT = 5;
@@ -57,7 +69,6 @@ module.exports = {
      rating,
      review_count,
      brand_name,
-     asin,
      seller,
      url
     ) => {
@@ -68,7 +79,6 @@ module.exports = {
         rating,
         review_count,
         brand_name,
-        asin,
         seller,
         url
       } 
@@ -103,30 +113,35 @@ module.exports = {
           // Try catch blocks because some products don't have certain fields
 
           try {
-            checkReview = await items[k].$eval('span.a-size-base', e => e.innerText);
+            checkReview = await items[k].$eval(selectors.reviewSel, e => e.innerText);
           }
           catch (e) {
             e ? prod['review_count'] = 0 : prod['review_count'] = checkReview;
           }
+
           try {
-            checkPrice = await items[k].$eval('span.a-price-whole', e => e.innerText);
+            checkPrice = await items[k].$eval(selectors.price, e => e.innerText);
           }
           catch (e) {
             e ? prod['price'] = 0 : prod['price'] = checkPrice;
           }
+
           isSponsored == null ? prod['sponsored'] = 0 : prod['sponsored'] = 1;
-          prod['product_name'] = await items[k].$eval('.a-size-base-plus.a-color-base.a-text-normal', e => e.innerText);
-          console.log(prod.product_name);
-          prod['url'] = await items [k].$eval('.a-link-normal.a-text-normal', e => e.href); 
-          products.push(prod);
+          prod['product_name'] = await items[k].$eval(selectors.pName, e => e.innerText);
+          prod['url'] = await items [k].$eval(selectors.url, e => e.href); 
 
           await pg.goto(prod['url'], { 'waitUntil': 'networkidle2' });
-           
-          reviewCheck(pg, selectors.review) ? prod['rating'] = 
-          prod['rating'] = await items[k].$ 
-          prod['brand'] = 
-          prod['asin'] = 
-          
+	
+          const isRated = await pg.$eval(selectors.review, e => e.innerText);
+	  const details = await pg.$$eval(selectors.misc, el => el.map(e => e.innerText));
+	  const manAsin = getBrandName(details); 
+
+          prod['rating'] = reviewCheck(isRated) ? await pg.$eval(selectors.rating, e => e.innerText.slice(0, 3)) : 0;
+          prod['seller'] = await pg.$eval(selectors.merchant, e => e.innerText); 
+          prod['asin'] = manAsin.asin;
+	  prod['brand_name'] = manAsin.man;
+          console.log(prod);
+          products.push(prod);
         };
       };
 
