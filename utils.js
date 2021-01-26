@@ -19,7 +19,7 @@ module.exports = {
   csvWriter: function (arr, name) {
     const fs = require('fs');
     const csv = require('fast-csv');
-    const ws = fs.createWriteStream(`${name}.csv`);
+    const ws = fs.createWriteStream(`${name.replace(/\+/g, '_')}.csv`);
 
     csv.write(arr, { headers: true })
        .pipe(ws);
@@ -37,8 +37,8 @@ module.exports = {
   getBrandName: function(arr) {
     ret = {};
     arr.forEach(el => {
-      isAsin = el.slice(0, 6) == 'ASIN :' ? true : false; 
-      isMan = el.slice(0, 14) == 'Manufacturer :' ? true : false;
+      const isAsin = el.slice(0, 6) == 'ASIN :' ? true : false; 
+      const isMan = el.slice(0, 14) == 'Manufacturer :' ? true : false;
       if(isAsin) ret.asin = el.slice(7);
       if(isMan) ret.man = el.slice(15);
     });
@@ -62,16 +62,16 @@ module.exports = {
   },
 
   _getProducts: async function (pg, sPg) {
-    const selectors = require('./selectors');
-    const addsPlusesBetweenKeywords = module.exports.addsPlusesBetweenKeywords;
-    const makeUri = module.exports.makeUri;
-    const reviewCheck = module.exports.reviewCheck;
-    const getBrandName = module.exports.getBrandName;
-    const isRatingSingle = module.exports.isRatingSingle;
-    const keywords = module.exports.keywords;
-
-    const MAX_PAGE_COUNT = 5;
-    const products = [];
+    // Reference to functions and variables
+    const selectors = require('./selectors'),
+    addsPlusesBetweenKeywords = module.exports.addsPlusesBetweenKeywords,
+    makeUri = module.exports.makeUri,
+    reviewCheck = module.exports.reviewCheck,
+    getBrandName = module.exports.getBrandName,
+    isRatingSingle = module.exports.isRatingSingle,
+    keywords = module.exports.keywords,
+    MAX_PAGE_COUNT = 2,
+    products = [];
 
     // Product Constructor - closure
 
@@ -102,7 +102,7 @@ module.exports = {
     for(i = 0; i < keywords.length; i++) {
       const keyword = addsPlusesBetweenKeywords(keywords[i]);     
       const _arr = [];
-      const _arr.push({ keyword: keywords[i]});
+      _arr.push({ keyword: keywords[i]});
 
     /* SECOND LOOP */
 
@@ -136,7 +136,7 @@ module.exports = {
           catch (e) {
             prod['review_count'] = 0
           }
-          checkReview ? prod['review_count'] = checkReview : null; 
+          (checkReview && !(isNaN(checkReview))) ? prod['review_count'] = checkReview : null; 
 
           try {
             checkPrice = await items[k].$eval(selectors.price, e => e.innerText);
@@ -149,38 +149,36 @@ module.exports = {
           isSponsored == null ? prod['sponsored'] = 0 : prod['sponsored'] = 1;
           prod['product_name'] = await items[k].$eval(selectors.pName, e => e.innerText);
           prod['url'] = await items [k].$eval(selectors.url, e => e.href); 
+          prod['asin'] = // slice url to get asin;
 
           await sPg.goto(prod['url'], { 'waitUntil': 'networkidle2' });
 
           const isRated = await sPg.$eval(selectors.review, e => e.innerText);
 	  const details = await sPg.$$eval(selectors.misc, el => el.map(e => e.innerText));
 	  const manAsin = getBrandName(details); 
-
-          prod['rating'] = reviewCheck(isRated) ? 
-			   (await sPg.$eval(selectors.rating, e => {
-                             const ret = isRatingSingle(e.innerText);
-			     return ret;
-			   })) 
-			   : 0;
-
+	  const isItRated = reviewCheck(isRated);
+          const rating = isItRated ? isRatingSingle(await sPg.$eval(selectors.rating, e => e.innerText)) : 0; 
+          prod['rating'] = rating;
 	  // Another Try catch block
 
           let checkSeller;
           try {
-            checkSeller = await sPg.$eval(selectors.merchant, e => e.innerText)
+            checkSeller = await sPg.$eval(selectors.merchant, e => e.innerText);
 	  }
           catch (e) {
-	    prod['seller'] = manAsin.man;
+	    try {
+              checkSeller = await sPg.$eval(selectors._merchant, e => e.innerText);
+	    } 
 	  }
+
           prod['seller'] = checkSeller; 
-          prod['asin'] = manAsin.asin;
 	  prod['brand_name'] = manAsin.man;
           _arr.push(prod);
           console.log(prod);
         };
       };
         products.push(_arr);
-	console.log(`pushed keyword: "${keywords[i]}" elements \n Length: ${_arr.length}`);
+	console.log(`pushed keyword: "${keywords[i]}" elements \nLength: ${_arr.length}`);
     };
 
     return products;

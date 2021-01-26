@@ -27,7 +27,7 @@ const products = [];
   console.log(products);
   products.forEach(p => {
     fileName = p[0].keyword;
-    csvWriter(products, fileName);
+    csvWriter(products[i][1], fileName);
   });
 
   await browser.close();

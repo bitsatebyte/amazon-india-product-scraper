@@ -41,28 +41,21 @@ const _uri = 'https://www.amazon.in/Watering-Suitable-Terrace-Gardening-Kitchen/
         page.on('console', msg => console.log('PAGE LOG:', msg.text()));
 	let checkSeller, w, x, y, z;
 	try {
-	  checkSeller = await page.$$eval(an, el => el.map(e => e.innerText));
+	  await page.waitForSelector(an, { timeout: 5000 });
 	}
 	catch (e) {
 	  console.log('executing catch block');
+	  try {
+            await page.waitForSelector('.print-sold-by', { timeout: 5000 });
+	    console.log(`didn't execute the second catch block`);
+          } catch (e) {
+            console.log('executing second catch block');
+	  }
         }
-        
-	console.log(checkSeller);
-	if(!checkSeller.length) {
-        const w = await page.$$eval(sel, el => el.map(e => e.innerText));
-	const x = await page.$$eval(newSel, el => el.map(e => e.innerText));
-	const y = await page.$$eval(_san, el => el.map(e => e.innerText));
-	const z = await page.$$eval(_an, el => el.map(e => e.innerText));
-	console.log(w);
-	console.log(x);
-	console.log(y);
-	console.log(z);
 
-	const arr = [...w, ...x];
-	const _arr = [...y, ...z];
-        const a = getBrandName(arr, _arr, 1);
-	console.log(a);
-	}
+
+        
+
 
 	await browser.close();
 })();
