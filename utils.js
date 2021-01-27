@@ -80,6 +80,34 @@ module.exports = {
     return r.slice(0,3);
   },
 
+  tryName: function(pg, sel) {
+  
+  },
+
+  tryBrand: function(pg, sel) {
+  
+  },
+
+  tryReviewCount: function(pg, sel) {
+  
+  },
+
+  tryRating: function(pg, sel) {
+  
+  },
+
+  tryPrice: function(pg, sel) {
+  
+  },
+
+  trySponsored: function(pg, sel) {
+  
+  },
+
+  tryMerch: function(pg, sel) {
+  
+  },
+
   _getProducts: async function (pg, sPg) {
     // Refs to functions and variables
     const selectors = require('./selectors'),
