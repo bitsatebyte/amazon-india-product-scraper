@@ -34,9 +34,9 @@ module.exports = {
   ],
 
   // Gets brand name and ASIN
-  getBrandName: function(arr) {
+  getBrandName: function(arr, secondArr, key) {
     let ret;
-    if(!key) {
+    if(!key && Array.isArray(arr)) {
       let isMan, isBrand;
       arr.forEach(el => {
       isMan = el.slice(0, 14) == 'Manufacturer :' ? true : false;
@@ -46,12 +46,14 @@ module.exports = {
       });
       return ret;
     } 
-    arr.forEach((el, index) => {
-      let isMan, isBrand;
-      isMan = el == 'Manufacturer' ? true : false;
-      isBrand = el == 'Brand' ? true : false;
-      if(isMan || isBrand) ret = secondArr[index]; 
-    });
+    if(Array.isArray(arr)) {
+      arr.forEach((el, index) => {
+        let isMan, isBrand;
+        isMan = el == 'Manufacturer' ? true : false;
+        isBrand = el == 'Brand' ? true : false;
+        if(isMan || isBrand) ret = secondArr[index]; 
+      });
+    }
     return ret;
   },
 
@@ -154,12 +156,12 @@ module.exports = {
 
           try {
             checkReview = await items[k].$eval(selectors.reviewSel, e => e.innerText);
+            console.log(checkReview);
           }
           catch (e) {
-            console.log('No reviews found!');
             prod['reviewCount'] = 0
           }
-          (checkReview && !(isNaN(checkReview))) ? prod['reviewCount'] = checkReview : null; 
+          (checkReview && !(isNaN(checkReview))) ? (prod['reviewCount'] = checkReview) : null; 
 
           // Checks if price is there in the selected product item set
           try {
@@ -174,14 +176,21 @@ module.exports = {
           isSponsored == null ? prod['sponsored'] = 0 : prod['sponsored'] = 1;
           prod['productName'] = await items[k].$eval(selectors.pName, e => e.innerText);
           prod['url'] = await items [k].$eval(selectors.url, e => e.href);
-          console.log(prod['url']);
+          /*
           const indexOfAsin = getAsinIndex(prod.url);
           prod['asin'] = prod['url'].substring(indexOfAsin+4, indexOfAsin+14); // slice url to get asin;
+          */
 
           // go to specific product page for other details
           await sPg.goto(prod['url'], { 'waitUntil': 'networkidle2' });
 
-          const isRated = await sPg.$eval(selectors.review, e => e.innerText);
+          let isRated;
+          try {
+            isRated = await sPg.$eval(selectors.review, e => e.innerText);
+          }
+	  catch (e) {
+            prod['rating'] = null;
+	  }
           const isItRated = reviewCheck(isRated);
           const rating = isItRated ? isRatingSingle(await sPg.$eval(selectors.rating, e => e.innerText)) : 0; 
           prod['rating'] = rating;
@@ -189,7 +198,7 @@ module.exports = {
           let details, brand;
           try {
             await sPg.waitForSelector(selectors.details, { timeout: 5000 });
-	    details = await sPg.$$eval(selectors.details, el => el.map(e => e.innerText));
+            details = await sPg.$$eval(selectors.details, el => el.map(e => e.innerText));
             brand = getBrandName(details);
           }
           catch (e) {
@@ -204,7 +213,14 @@ module.exports = {
               brand = getBrandName(_tempHeaders, _tempData, 1); 
             } 
             catch (e) {
-              prod['brand'] = 'Unbranded/Not Found';
+              try {
+	        await sPg.waitForSelector(selectors.brand, { timeout: 5000 });
+	        brand = await sPg.$eval(selectors.brand, el => el.innerText.substring(7));
+                prod['brand'] = brand;
+              }
+              catch (e) {
+                prod['brand'] = 'Unbranded/Not Found';
+              }
             }
           }
 	  const manAsin = getBrandName(details); 
@@ -230,21 +246,19 @@ module.exports = {
           catch (e) {
 	    try {
               await sPg.waitForSelector(selectors.bookMerch, { timeout: 5000 });
-              checkMerch = await sPg.$eval(selectors.bookmerchant, e => e.innerText);
+              checkMerch = await sPg.$eval(selectors.bookMerch, e => e.innerText);
               prod['isBook'] = true;
 	    } 
             catch (e) {
-            /*
               try {
-                await sPg.waitForSelector(selectors.otherMerch, { timeout: 5000 });
-                checkMerch = await sPg.$eval(selectors.otherMerch, e => e.innerText);
-                prod['isBook'] = false;
+                await sPg.waitForSelector(selectors.bookAuth, { timeout: 5000 });
+                checkMerch = await sPg.$eval(selectors.bookAuth, e => e.innerText);
+                prod['isBook'] = true;
               }
               catch (e) {
                 prod['merchant'] = 'Third-Party Store';
+                prod['isBook'] = false;
               }
-            */
-              prod['merchant'] = 'Third-Party Store';
             }
 	  }
 

@@ -10,6 +10,8 @@ module.exports = {
   reviewSel: 'span.a-size-base',
   rating: 'span.a-size-medium.a-color-base',
   review: '#cm-cr-dp-review-header',
+  brand: '#bylineInfo',
+  bookAuth: '.author.notFaded',
   details: '#detailBullets_feature_div li .a-list-item',
   altDetailHead: '#productDetails_detailBullets_sections1 th',
   altDetailData: '#productDetails_detailBullets_sections1 td',
