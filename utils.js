@@ -80,32 +80,97 @@ module.exports = {
     return r.slice(0,3);
   },
 
-  tryName: function(pg, sel) {
-  
+  // Try-Catch functions for all data-points since amazon's shitty product page templates are not standardized.
+  tryName: function(pg, sel, item) {
+    let ret;
+    
+    try {
+      ret = await items.$eval(sel, e => e.innerText);
+    }
+    catch (e) {
+      ret = false; 
+    }
+
+    return ret;
   },
 
   tryBrand: function(pg, sel) {
-  
+    
   },
 
   tryReviewCount: function(pg, sel) {
-  
+    let ret;
+
+    try {
+      ret = await items[k].$eval(selectors.reviewSel, e => e.innerText);
+    }
+    catch (e) {
+      ret = 0; 
+    }
+
+    return ret;
   },
 
   tryRating: function(pg, sel) {
-  
+    
   },
 
   tryPrice: function(pg, sel) {
-  
+    
   },
 
-  trySponsored: function(pg, sel) {
-  
+  trySponsored: function(pg, sel, item) {
+    let ret;
+
+    try {
+      ret = await item.$(sel);
+    }
+    catch (e) {
+      ret = null; 
+    }
+
+    ret == null ? return 0 : return 1;
   },
 
   tryMerch: function(pg, sel) {
-  
+    /*===============================================================================
+    this nested try catch block has to check for different kinds of merchants
+    this is because amazon has different kinds of products on its store
+    like books(kindle/paperback), or it might be available from a different
+    set of sellers altogether.
+    The try-catch block below first checks for the basic merchant using sel,
+    if not found, then it goes to check whether the given product is a book
+    and if it has a merchant using bookSel.
+    If product is not a book, it then goes on to select a different sel
+    which is otherSel. If the merchant is still not found, dismiss it as third-party 
+    =================================================================================*/
+
+    let ret;
+    try {
+      await pg.waitForSelector(sel[0], { timeout: 5000 });
+      ret['merch'] = await pg.$eval(sel[0], e => e.innerText);
+      ret['isBook'] = false;
+    }
+    catch (e) {
+      try {
+        await pg.waitForSelector(sel[1], { timeout: 5000 });
+        ret['merch'] = await pg.$eval(sel[1], e => e.innerText);
+        ret['isBook'] = true;
+      } 
+      catch (e) {
+        try {
+          await pg.waitForSelector(sel[2], { timeout: 5000 });
+          ret['merch'] = await pg.$eval(sel[2], e => e.innerText);
+          ret['isBook'] = true;
+        }
+        catch (e) {
+          ret['merch'] = 'Third-Party Store';
+          ret['isBook'] = false;
+        }
+      }
+    }
+
+  return ret;
   },
 
   _getProducts: async function (pg, sPg) {
@@ -176,20 +241,9 @@ module.exports = {
 
           let prod = Product();
 
-          const isSponsored = await items[k].$(selectors.sponsored);
-
           // Try catch blocks because some products don't have certain fields
 
-	  let checkReview, checkPrice;
-
-          try {
-            checkReview = await items[k].$eval(selectors.reviewSel, e => e.innerText);
-            console.log(checkReview);
-          }
-          catch (e) {
-            prod['reviewCount'] = 0
-          }
-          (checkReview && !(isNaN(checkReview))) ? (prod['reviewCount'] = checkReview) : null; 
+          let checkPrice;
 
           // Checks if price is there in the selected product item set
           try {
@@ -199,10 +253,8 @@ module.exports = {
             console.log('Price not found');
             prod['price'] = 0;
           }
-          checkPrice ? prod['price'] = checkPrice : null;
+          checkPrice ? prod['price'] = checkPrice : prod['price'] = null;
 
-          isSponsored == null ? prod['sponsored'] = 0 : prod['sponsored'] = 1;
-          prod['productName'] = await items[k].$eval(selectors.pName, e => e.innerText);
           prod['url'] = await items [k].$eval(selectors.url, e => e.href);
           /*
           const indexOfAsin = getAsinIndex(prod.url);
@@ -253,7 +305,7 @@ module.exports = {
           }
 	  const manAsin = getBrandName(details); 
 
-	  /*===============================================================================
+           /*===============================================================================
            this nested try catch block has to check for different kinds of merchants
            this is because amazon has different kinds of products on its store
            like books(kindle/paperback), or it might be available from a different
@@ -292,6 +344,24 @@ module.exports = {
 
           prod['merchant'] = checkMerch; 
 	  prod['brand'] = manAsin;
+
+          const checkReview = tryReview(pg, selectors.reviewCountSel, items[k]); 
+          (checkReview && !(isNaN(checkReview)) && checkReview != null) ? (prod['reviewCount'] = checkReview) : (prod['reviewCount'] = 0); 
+
+          prod['productName'] = tryName(pg, selectors.pName, items[k]) ? tryName(pg, selectors.pName, items[k]) : 'NA';
+          prod['sponsored'] = trySponsored(pg, selectors.sponsored, items[k]);
+          prod['price'] = ;
+          prod['url'] = await items [k].$eval(selectors.url, e => e.href);
+
+          // go to specific product page in second-page (new-tab)
+          await sPg.goto(prod['url'], { 'waitUntil': 'networkidle2' });
+
+          prod['rating'] = ;
+
+          const checkMerch = tryMerch(sPg, [selectors.merchant, selectors.bookMerch, selectors.bookAuth]);
+          prod['merchant'] = checkMerch.merch;
+          prod['isBook'] = checkMerch.isBook;
+          prod['brand'] = ;
           _arr.push(prod);
           console.log(prod);
         };

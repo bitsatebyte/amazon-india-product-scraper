@@ -7,7 +7,7 @@ module.exports = {
   otherMerch: '#availability',
   url: '.a-link-normal.a-text-normal',
   price: 'span.a-price-whole',
-  reviewSel: 'span.a-size-base',
+  reviewCountSel: 'span.a-size-base',
   rating: 'span.a-size-medium.a-color-base',
   review: '#cm-cr-dp-review-header',
   brand: '#bylineInfo',
