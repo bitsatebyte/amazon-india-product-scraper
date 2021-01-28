@@ -7,13 +7,13 @@ const {
   _getProducts,
 } = utils;
 
-const products = [];
+let products = [];
 
 // start puppeteer
 
 (async () => {
   const browser = await puppeteer.launch({
-    headless: true,
+    headless: false,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 

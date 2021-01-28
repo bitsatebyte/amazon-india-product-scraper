@@ -9,6 +9,7 @@ module.exports = {
   price: 'span.a-price-whole',
   rating: 'span.a-size-medium.a-color-base',
   noRating: '#cm-cr-dp-review-header',
+  ratingDataHook: '[data-hook = \'total-review-count\']',
   reviewCountSel: 'span.a-size-base',
   brand: '#bylineInfo',
   bookAuth: '.author.notFaded',
