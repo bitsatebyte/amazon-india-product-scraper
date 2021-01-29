@@ -25,9 +25,9 @@ let products = [];
   const p = await _getProducts(page, secondPage);
   products = [...p];
   console.log(products);
-  products.forEach(p => {
-    fileName = p[0].keyword;
-    csvWriter(products[i][1], fileName);
+  keywords.forEach((kw, index) => {
+    fileName = kw;
+    csvWriter(products[index], fileName);
   });
 
   await browser.close();

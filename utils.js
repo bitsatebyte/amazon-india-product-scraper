@@ -19,7 +19,7 @@ module.exports = {
   csvWriter: function (arr, name) {
     const fs = require('fs');
     const csv = require('fast-csv');
-    const ws = fs.createWriteStream(`${name.replace(/\+/g, '_')}.csv`);
+    const ws = fs.createWriteStream(`${name.replace(/\s/g, '_')}.csv`);
 
     csv.write(arr, { headers: true })
        .pipe(ws);
@@ -129,6 +129,7 @@ module.exports = {
     return ret
   },
 
+  // Checks for review count (eg: 120 reviews)
   tryReviewCount: async function (sel, item) {
     let ret;
 
@@ -142,6 +143,13 @@ module.exports = {
     return ret;
   },
 
+  /*=================================================
+   * For some weird reason, tryReviewCount is unable*
+   * to get the reviewCount all the time.           *
+   * This is why, reviewCount is checked twice, once*
+   * on the search results page, and again on the   *
+   * specific product page.                         *
+   *================================================*/
   tryForReviewCountAgain: async function (pg, sel) {
     let ret;
 
@@ -153,8 +161,10 @@ module.exports = {
     }
 
     if(ret != null) return ret.substring(0, (ret.indexOf('g') - 1));
+    return ret;
   },
 
+  // Checks for the Rating (eg: 4.3, 4, 3.2, 5, 1.3)
   tryRating: async function (pg, sel) {
     let ret;
 
@@ -173,6 +183,7 @@ module.exports = {
     return ret;
   },
 
+  // Checks for the price of the product
   tryPrice: async function (sel, item) {
     let ret;
 
@@ -186,6 +197,7 @@ module.exports = {
     return ret;
   },
 
+  // Checks if the product is sponsored
   trySponsored: async function (sel, item) {
     let ret;
 
@@ -200,7 +212,9 @@ module.exports = {
     return 1;
   },
 
+  // Tries to fetch the merchant/seller of the product
   tryMerch: async function (pg, sel) {
+
     /*===============================================================================
     this nested try catch block has to check for different kinds of merchants
     this is because amazon has different kinds of products on its store
@@ -215,25 +229,25 @@ module.exports = {
 
     let ret = {};
     try {
+      ret['isBook'] = false;
       await pg.waitForSelector(sel[0], { timeout: 3000 });
       ret['merch'] = await pg.$eval(sel[0], e => e.innerText);
-      ret['isBook'] = false;
     }
     catch (e) {
       try {
+        ret['isBook'] = true;
         await pg.waitForSelector(sel[1], { timeout: 3000 });
         ret['merch'] = await pg.$eval(sel[1], e => e.innerText);
-        ret['isBook'] = true;
       } 
       catch (e) {
         try {
+          ret['isBook'] = true;
           await pg.waitForSelector(sel[2], { timeout: 3000 });
           ret['merch'] = await pg.$eval(sel[2], e => e.innerText);
-          ret['isBook'] = true;
         }
         catch (e) {
-          ret['merch'] = 'Third-Party Store';
           ret['isBook'] = false;
+          ret['merch'] = 'Third-Party Store';
         }
       }
     }
@@ -269,7 +283,7 @@ module.exports = {
           tryReviewCount = module.exports.tryReviewCount,
           tryForReviewCountAgain = module.exports.tryForReviewCountAgain;
 
-	
+
 
     // Product Constructor - closure
 
@@ -302,7 +316,6 @@ module.exports = {
     for(i = 0; i < keywords.length; i++) {
       const keyword = addsPlusesBetweenKeywords(keywords[i]);     
       const _arr = [];
-      _arr.push({ keyword: keywords[i]});
 
     /* SECOND LOOP */
 
@@ -332,7 +345,7 @@ module.exports = {
 
           // Scraping work starts here 
 
-          console.log(`Current Element: ${k}`);
+          console.log(`Current Element: ${k+1} of ${items.length}`);
 
           const checkName = await tryName(selectors.pName, item),
                 checkSponsored = await trySponsored(selectors.sponsored, item),
@@ -350,7 +363,7 @@ module.exports = {
 
           const checkRating = await tryRating(sPg, [selectors.rating, selectors.noRating]),
                 checkReview = await tryReviewCount(selectors.reviewCountSel, item),
-		checkReviewAgain = await tryForReviewCountAgain(sPg, selectors.ratingDatahook);
+                checkReviewAgain = await tryForReviewCountAgain(sPg, selectors.ratingDataHook);
                 checkMerch = await tryMerch(sPg, [
                                              selectors.merchant, 
                                              selectors.bookMerch, 
@@ -363,7 +376,7 @@ module.exports = {
                                              selectors.altDetailData, 
                                              selectors.altTechData, 
                                              selectors.brand
-		                           ]);
+                                            ]);
 
           let isItRated;
           if(checkRating) isItRated = reviewCheck(checkRating)
