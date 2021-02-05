@@ -17,6 +17,11 @@ let products = [];
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
+  /*----------------------------------------------------------------------*
+    create two pages:                                                     *
+      * one for scraping the generic records from the search results page *
+      * another for navigating to the specific product page               *
+  *----------------------------------------------------------------------*/
   const page = await browser.newPage();
   const secondPage = await browser.newPage();
   page.setViewport({ width: 1280, height: 926 });
