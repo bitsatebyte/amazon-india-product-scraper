@@ -2,12 +2,14 @@
   "name": "amazon-india-product-scraper",
   "version": "1.0.0",
   "description": "",
-  "main": "scraper.js",
+  "main": "index.js",
   "dependencies": {
     "fast-csv": "^4.3.6",
     "puppeteer": "^5.5.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "tape": "^5.1.1"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
