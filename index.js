@@ -1,9 +1,9 @@
 const puppeteer = require('puppeteer');
 const utils = require('./utils');
+const keywords = require('./utils/config')[keywords];
 
 const {
   csvWriter,
-  keywords,
   _getProducts,
 } = utils;
 
