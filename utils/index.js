@@ -255,8 +255,8 @@ module.exports = {
       getBrandName = module.exports.getBrandName,
       getAsinIndex = module.exports.getAsinIndex,
       isRatingSingle = module.exports.isRatingSingle,
-      keywords = require('./config.js')[keywords],
-      PAGE_COUNT = require('./config.js')[PAGE_COUNT],
+      keywords = require('./config.js').keywords,
+      PAGE_COUNT = require('./config.js').PAGE_COUNT,
       products = [];
 
     /*==========================================================
